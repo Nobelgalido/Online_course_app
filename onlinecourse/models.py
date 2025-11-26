@@ -94,10 +94,51 @@ class Enrollment(models.Model):
     mode = models.CharField(max_length=5, choices=COURSE_MODES, default=AUDIT)
     rating = models.FloatField(default=5.0)
 
+# Question model
+class Question(models.Model):
+    # Many-to-One relationship with Course
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    
+    # Question text/content
+    content = models.CharField(max_length=200)
+    
+    # Grade/points for this question
+    grade = models.IntegerField(default=50)
+    
+    def __str__(self):
+        return "Question: " + self.content
+    
+    # Method to calculate if the learner gets the score of the question
+    def is_get_score(self, selected_ids):
+        all_answers = self.choice_set.filter(is_correct=True).count()
+        selected_correct = self.choice_set.filter(is_correct=True, id__in=selected_ids).count()
+        if all_answers == selected_correct:
+            return True
+        else:
+            return False
 
-# One enrollment could have multiple submission
-# One submission could have multiple choices
-# One choice could belong to multiple submissions
-#class Submission(models.Model):
-#    enrollment = models.ForeignKey(Enrollment, on_delete=models.CASCADE)
-#    choices = models.ManyToManyField(Choice)
+# Choice model
+class Choice(models.Model):
+    # Many-to-One relationship with Question
+    question = models.ForeignKey(Question, on_delete=models.CASCADE)
+    
+    # Choice text
+    content = models.CharField(max_length=200)
+    
+    # Indicates if this choice is correct or not
+    is_correct = models.BooleanField(default=False)
+    
+    def __str__(self):
+        return self.content
+    
+# Submission model
+class Submission(models.Model):
+    # Many-to-One relationship with Enrollment
+    enrollment = models.ForeignKey(Enrollment, on_delete=models.CASCADE)
+    
+    # Many-to-Many relationship with Choice
+    choices = models.ManyToManyField(Choice)
+    
+    def __str__(self):
+        return f"Submission for {self.enrollment.user.username}"
+
